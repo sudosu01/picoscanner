@@ -1,100 +1,401 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>PICO APK Privacy Scanner</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { margin-top: 30px; }
-    .panel { border:1px solid #ccc; padding:15px; margin-bottom:20px; }
-    textarea { width:100%; height:120px; font-family: monospace; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th,td { border:1px solid #ccc; padding:6px; font-size: 13px; vertical-align: top; }
-    th { background:#f2f2f2; }
-  </style>
+    <meta charset="utf-8">
+    <title>PICO APK Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #logarea {
+            height: 200px;
+            overflow: auto;
+            background: #111;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+            button:hover:not(:disabled) {
+                background: #45a049;
+            }
+
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 70%;
+            margin: 5px 0;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .status-running {
+            background: #e6f7ff;
+            color: #0070c0;
+        }
+
+        .status-finished {
+            background: #e6ffed;
+            color: #007000;
+        }
+
+        .status-error {
+            background: #fff2f0;
+            color: #c00;
+        }
+
+        .app-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
 </head>
 <body>
-  <h1>PICO APK Privacy Scanner</h1>
+    <h1>PICO APK Scanner</h1>
 
-  <div class="panel">
-    <h2>Step 1: Pull APK</h2>
-    <label>Package:</label> <input id="pkg" size="40"><br>
-    <label>APK Path:</label> <input id="apk_path" size="60"><br>
-    <label>Destination path:</label> <input id="dest" size="60"><br>
-    <button onclick="startPull()">Pull</button>
-  </div>
+    <div class="panel">
+        <h3>Device Status</h3>
+        <div id="device">Detecting...</div>
+    </div>
 
-  <div class="panel">
-    <h2>Step 2: Decompile APK</h2>
-    <label>APK File:</label> <input id="apk_local" size="60"><br>
-    <button onclick="startDecompile()">Decompile</button>
-  </div>
+    <div class="panel">
+        <h3>Installed Apps</h3>
+        <div id="appslist">Loading...</div>
+    </div>
 
-  <div class="panel">
-    <h2>Step 3: Scan Decompiled Folder</h2>
-    <label>Decompiled Folder:</label> <input id="decompile_dir" size="60"><br>
-    <button onclick="startScan()">Scan</button>
-  </div>
+    <div class="panel">
+        <h3>APK Paths</h3>
+        <div id="apkslist">Select an app to view APK files</div>
+    </div>
 
-  <div class="panel">
-    <h2>Logs</h2>
-    <textarea id="logs" readonly>No logs yet</textarea>
-  </div>
+    <div class="panel">
+        <h3>Actions</h3>
+        <label>APK Destination: <input id="destpath" placeholder="C:\Users\user\Music\Call\app.apk"></label><br>
+        <button id="pullbtn" disabled>Pull APK</button>
+        <button id="decompilebtn" disabled>Decompile</button>
+        <button id="scanbtn" disabled>Scan</button>
+        <button id="openfolderbtn" disabled>Open Folder</button>
 
-  <div class="panel">
-    <h2>Scan Results</h2>
-    <div id="results">No results yet</div>
-  </div>
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
 
-<script>
-let currentTask=null;
-function pollTask(tid,cb){
-  fetch('/task_status/'+tid).then(r=>r.json()).then(d=>{
-    if(d.logs){document.getElementById('logs').value=d.logs.join("\n");}
-    if(d.status==='finished'||d.status==='error'){cb(d);}
-    else{setTimeout(()=>pollTask(tid,cb),1000);}
-  });
-}
-function startPull(){
-  let data={package:pkg.value,apk_path:apk_path.value,dest_path:dest.value};
-  fetch('/start_pull',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-    .then(r=>r.json()).then(j=>{
-      pollTask(j.task_id,d=>{ if(d.meta.local_apk){apk_local.value=d.meta.local_apk;} });
-    });
-}
-function startDecompile(){
-  let data={apk_path:apk_local.value};
-  fetch('/start_decompile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-    .then(r=>r.json()).then(j=>{
-      pollTask(j.task_id,d=>{ if(d.meta.decompile_dir){decompile_dir.value=d.meta.decompile_dir;} });
-    });
-}
-function startScan(){
-  let data={decompile_dir:decompile_dir.value};
-  fetch('/start_scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
-    .then(r=>r.json()).then(j=>{
-      pollTask(j.task_id,d=>{
-        if(d.meta.results){
-          renderResults(d.meta.results);
+    <div class="panel">
+        <h3>Logs</h3>
+        <div id="logarea"></div>
+    </div>
+
+    <div class="panel">
+        <h3>Scan Results</h3>
+        <div id="results">No results yet</div>
+    </div>
+
+    <script>
+        let selectedPackage = null;
+        let selectedApkPath = null;
+        let lastDecompileDir = null;
+
+        function api(url, options) {
+            return fetch(url, options).then(r => r.json());
         }
-      });
-    });
-}
-function renderResults(res){
-  let html='<table><tr><th>SDK</th><th>Laws</th><th>Found Inits</th><th>Found Privacy APIs</th><th>Missing Privacy APIs</th><th>PVPs</th></tr>';
-  for(let r of res){
-    html+=`<tr>
-      <td>${r.sdk}</td>
-      <td>${r.laws}</td>
-      <td>${r.found_inits.map(p=>p.path+":"+p.line).join("<br>")||'-'}</td>
-      <td>${r.found_privacy_apis.map(p=>p.law+":"+p.api+" ("+p.pos.path+":"+p.pos.line+")").join("<br>")||'-'}</td>
-      <td>${r.missing_privacy_apis.join("<br>")||'-'}</td>
-      <td>${r.pvp_triggered.join(", ")||'-'}</td>
-    </tr>`;
-  }
-  html+='</table>';
-  document.getElementById('results').innerHTML=html;
-}
-</script>
+
+        function log(message) {
+            const logArea = document.getElementById('logarea');
+            logArea.innerHTML += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function showProgress(show) {
+            document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function detectDevice() {
+            api('/device').then(r => {
+                const deviceEl = document.getElementById('device');
+                deviceEl.innerHTML = r.device ?
+                    `<span class="status status-finished">Connected: ${r.device}</span>` :
+                    `<span class="status status-error">No device connected</span>`;
+                loadApps();
+            });
+        }
+
+        function loadApps() {
+            const appsList = document.getElementById('appslist');
+            appsList.innerHTML = "Loading apps...";
+
+            api('/list_apps').then(r => {
+                if (r.error) {
+                    appsList.innerHTML = `<span class="status status-error">${r.error}</span>`;
+                    return;
+                }
+
+                let html = '<div class="app-list"><table><tr><th>#</th><th>App</th><th>Package</th><th></th></tr>';
+                r.apps.forEach(app => {
+                    html += `<tr>
+                            <td>${app.index}</td>
+                            <td>${app.short}</td>
+                            <td>${app.package}</td>
+                            <td><button onclick="selectApp('${app.package}')">Select</button></td>
+                        </tr>`;
+                });
+                html += '</table></div>';
+                appsList.innerHTML = html;
+            });
+        }
+
+        function selectApp(pkg) {
+            selectedPackage = pkg;
+            log(`Selected app: ${pkg}`);
+
+            const apksList = document.getElementById('apkslist');
+            apksList.innerHTML = "Loading APK paths...";
+
+            api('/apk_paths?package=' + encodeURIComponent(pkg)).then(r => {
+                if (r.paths && r.paths.length) {
+                    let html = '<table><tr><th>Path</th><th></th></tr>';
+                    r.paths.forEach((path, i) => {
+                        html += `<tr>
+                                <td>${path}</td>
+                                <td><button onclick="selectApk('${path}')">Select</button></td>
+                            </tr>`;
+                    });
+                    html += '</table>';
+                    apksList.innerHTML = html;
+                } else {
+                    apksList.innerHTML = "No APK paths found";
+                }
+            });
+        }
+
+        function selectApk(path) {
+            selectedApkPath = path;
+            document.getElementById('pullbtn').disabled = false;
+            log(`Selected APK: ${path}`);
+        }
+
+        document.getElementById('pullbtn').onclick = function () {
+            const dest = document.getElementById('destpath').value;
+            if (!dest) {
+                alert("Please enter a destination path");
+                return;
+            }
+
+            showProgress(true);
+            updateProgress(10);
+            log(`Pulling APK to ${dest}`);
+
+            api('/start_pull', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    package: selectedPackage,
+                    apk_path: selectedApkPath,
+                    dest_path: dest
+                })
+            }).then(r => {
+                pollTask(r.task_id, data => {
+                    if (data.meta && data.meta.apk) {
+                        document.getElementById('destpath').value = data.meta.apk;
+                        document.getElementById('decompilebtn').disabled = false;
+                        updateProgress(50);
+                    }
+                    showProgress(false);
+                });
+            });
+        };
+
+        document.getElementById('decompilebtn').onclick = function () {
+            const apkPath = document.getElementById('destpath').value;
+            if (!apkPath) {
+                alert("No APK selected");
+                return;
+            }
+
+            showProgress(true);
+            updateProgress(60);
+            log(`Decompiling ${apkPath}`);
+
+            api('/start_decompile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apk_path: apkPath })
+            }).then(r => {
+                pollTask(r.task_id, data => {
+                    if (data.meta && data.meta.decompile_dir) {
+                        lastDecompileDir = data.meta.decompile_dir;
+                        document.getElementById('scanbtn').disabled = false;
+                        document.getElementById('openfolderbtn').disabled = false;
+                        updateProgress(80);
+                    }
+                    showProgress(false);
+                });
+            });
+        };
+
+        document.getElementById('scanbtn').onclick = function () {
+            if (!lastDecompileDir) {
+                alert("No decompiled directory available");
+                return;
+            }
+
+            showProgress(true);
+            updateProgress(90);
+            log(`Starting scan of ${lastDecompileDir}`);
+
+            api('/start_scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ decompile_dir: lastDecompileDir })
+            }).then(r => {
+                pollTask(r.task_id, data => {
+                    if (data.meta && data.meta.results) {
+                        renderResults(data.meta.results);
+                        updateProgress(100);
+                    }
+                    setTimeout(() => showProgress(false), 1000);
+                });
+            });
+        };
+
+        document.getElementById('openfolderbtn').onclick = function () {
+            if (!lastDecompileDir) {
+                alert("No folder to open");
+                return;
+            }
+
+            api('/open_folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: lastDecompileDir })
+            }).then(r => {
+                if (r.error) {
+                    log(`Error: ${r.error}`);
+                } else {
+                    log("Folder opened");
+                }
+            });
+        };
+
+        function pollTask(taskId, callback) {
+            const interval = setInterval(() => {
+                api('/task_status/' + taskId).then(data => {
+                    if (data.logs) {
+                        data.logs.forEach(logEntry => {
+                            if (!logEntry.includes('PICO APK Scanner')) {
+                                log(logEntry);
+                            }
+                        });
+                    }
+
+                    if (['finished', 'error'].includes(data.status)) {
+                        clearInterval(interval);
+                        callback(data);
+                    }
+                });
+            }, 1000);
+        }
+
+        function renderResults(results) {
+            if (!results || results.length === 0) {
+                document.getElementById('results').innerHTML = "No results found";
+                return;
+            }
+
+            let html = '<table><tr><th>SDK</th><th>Laws</th><th>Findings</th><th>Missing</th><th>PVPs</th></tr>';
+
+            results.forEach(r => {
+                const findings = r.found_inits.length + r.found_privacy_apis.length;
+                const missing = r.missing_privacy_apis.length;
+                const pvps = r.pvp_triggered.length;
+
+                html += `<tr>
+                        <td>${r.sdk}</td>
+                        <td>${r.laws}</td>
+                        <td>${findings} found</td>
+                        <td>${missing} missing</td>
+                        <td>${pvps} PVPs</td>
+                    </tr>`;
+            });
+
+            html += '</table>';
+            document.getElementById('results').innerHTML = html;
+        }
+
+        // Initialize
+        detectDevice();
+    </script>
 </body>
 </html>
