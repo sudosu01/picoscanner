@@ -35,7 +35,7 @@ Step 6: Report Generation
 
 
 # Flowchart of Privacy Scanning Process
-<img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/0f80f8db-18c4-46a4-9de5-535e1bd19ac2" />
+<img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/b758965c-b563-434e-9af7-4bfdf9e77308" />
 
 # Tools Required
 * Nox Player (or any Android emulator / real device) - Used to run apps and pull APKs via ADB.
