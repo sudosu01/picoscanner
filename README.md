@@ -51,16 +51,15 @@ Instead of decompiling manually and running the scanner yourself, this version p
 - Show results in browser with logs and HTML tables
 
 # Tools Required
-- Same as manual flow (Nox Player, ADB, apktool, Python 3.9+)
-- Flask – backend web server
+- Emulator: Nox Player, ADB, apktool, Python 3.9+)
+- Flask - backend web server
 - Celery + Redis – optional, for handling long-running tasks asynchronously
 - Flask-CORS – to allow browser access
 Dependencies: pip install flask flask-cors
 
 # Setup (Automated flow)
 - Start the Flask server: python server.py
-- Open the UI
-Open http://127.0.0.1:5000 in your browser.
+- Open the UI url in browser -  http://127.0.0.1:5000
 
 # Workflow in the UI
 - Select an app from the device
