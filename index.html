@@ -166,37 +166,127 @@
         .risk-low {
             color: #090;
         }
+
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: 0.3s;
+            color: #333;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        .tab button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .file-browser {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .file-item {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .file-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .folder-icon:before {
+            content: "📁 ";
+        }
+
+        .file-icon:before {
+            content: "📄 ";
+        }
     </style>
 </head>
 <body>
     <h1>PICO APK Scanner</h1>
 
-    <div class="panel">
-        <h3>Device Status</h3>
-        <div id="device">Detecting...</div>
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'FullProcessTab')">Full Process</button>
+        <button class="tablinks" onclick="openTab(event, 'DirectScanTab')">Direct Scan</button>
     </div>
 
-    <div class="panel">
-        <h3>Installed Apps</h3>
-        <div id="appslist">Loading...</div>
+    <!-- Full Process Tab -->
+    <div id="FullProcessTab" class="tabcontent" style="display: block;">
+        <div class="panel">
+            <h3>Device Status</h3>
+            <div id="device">Detecting...</div>
+        </div>
+
+        <div class="panel">
+            <h3>Installed Apps</h3>
+            <div id="appslist">Loading...</div>
+        </div>
+
+        <div class="panel">
+            <h3>APK Paths</h3>
+            <div id="apkslist">Select an app to view APK files</div>
+        </div>
+
+        <div class="panel">
+            <h3>Actions</h3>
+            <label>APK Destination: <input id="destpath" placeholder="C:\Users\user\Music\Call\app.apk"></label><br>
+            <button id="pullbtn" disabled>Pull APK</button>
+            <button id="decompilebtn" disabled>Decompile</button>
+            <button id="scanbtn" disabled>Scan</button>
+            <button id="openfolderbtn" disabled>Open Folder</button>
+
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress-bar" id="progressBar"></div>
+                <div id="progressText" style="text-align: center; margin-top: 5px;">0%</div>
+            </div>
+        </div>
     </div>
 
-    <div class="panel">
-        <h3>APK Paths</h3>
-        <div id="apkslist">Select an app to view APK files</div>
-    </div>
-
-    <div class="panel">
-        <h3>Actions</h3>
-        <label>APK Destination: <input id="destpath" placeholder="C:\Users\user\Music\Call\app.apk"></label><br>
-        <button id="pullbtn" disabled>Pull APK</button>
-        <button id="decompilebtn" disabled>Decompile</button>
-        <button id="scanbtn" disabled>Scan</button>
-        <button id="openfolderbtn" disabled>Open Folder</button>
-
-        <div class="progress-container" id="progressContainer" style="display: none;">
-            <div class="progress-bar" id="progressBar"></div>
-            <div id="progressText" style="text-align: center; margin-top: 5px;">0%</div>
+    <!-- Direct Scan Tab -->
+    <div id="DirectScanTab" class="tabcontent">
+        <div class="panel">
+            <h3>Direct Scan</h3>
+            <p>Select a decompiled APK folder to scan directly:</p>
+            
+            <div class="file-browser" id="fileBrowser">
+                <div id="browserContent">Loading...</div>
+            </div>
+            
+            <button id="selectFolderBtn" disabled>Select This Folder</button>
+            <button id="scanDirectBtn" disabled>Start Scan</button>
+            <button id="refreshBrowserBtn" onclick="refreshBrowser()">Refresh</button>
+            
+            <div class="progress-container" id="directProgressContainer" style="display: none;">
+                <div class="progress-bar" id="directProgressBar"></div>
+                <div id="directProgressText" style="text-align: center; margin-top: 5px;">0%</div>
+            </div>
         </div>
     </div>
 
@@ -216,6 +306,8 @@
         let lastDecompileDir = null;
         let currentResults = [];
         let expandedSDKs = {};
+        let currentBrowserPath = '.';
+        let selectedScanFolder = null;
 
         function api(url, options) {
             return fetch(url, options).then(r => r.json());
@@ -227,13 +319,85 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
 
-        function showProgress(show) {
-            document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+        function showProgress(show, isDirect = false) {
+            const container = isDirect ? 'directProgressContainer' : 'progressContainer';
+            document.getElementById(container).style.display = show ? 'block' : 'none';
         }
 
-        function updateProgress(percent) {
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressText').innerText = Math.round(percent) + '%';
+        function updateProgress(percent, isDirect = false) {
+            const bar = isDirect ? 'directProgressBar' : 'progressBar';
+            const text = isDirect ? 'directProgressText' : 'progressText';
+            document.getElementById(bar).style.width = percent + '%';
+            document.getElementById(text).innerText = Math.round(percent) + '%';
+        }
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+            
+            // Load file browser when Direct Scan tab is opened
+            if (tabName === 'DirectScanTab') {
+                loadFileBrowser('.');
+            }
+        }
+
+        function loadFileBrowser(path) {
+            const browserContent = document.getElementById('browserContent');
+            browserContent.innerHTML = "Loading...";
+            
+            api('/browse_folder?path=' + encodeURIComponent(path)).then(r => {
+                if (r.error) {
+                    browserContent.innerHTML = `<span class="status status-error">${r.error}</span>`;
+                    return;
+                }
+                
+                currentBrowserPath = r.path;
+                let html = '';
+                
+                // Add parent directory link if not at root
+                if (r.path !== '.') {
+                    const parentPath = r.path.split('/').slice(0, -1).join('/') || '.';
+                    html += `<div class="file-item" onclick="loadFileBrowser('${parentPath}')">
+                            <span class="folder-icon"></span>..
+                        </div>`;
+                }
+                
+                // Add directories first
+                r.items.filter(item => item.is_dir).forEach(item => {
+                    html += `<div class="file-item" onclick="loadFileBrowser('${item.path}')">
+                            <span class="folder-icon"></span>${item.name}
+                        </div>`;
+                });
+                
+                // Then add files
+                r.items.filter(item => !item.is_dir).forEach(item => {
+                    html += `<div class="file-item" onclick="selectFolder('${item.path}')">
+                            <span class="file-icon"></span>${item.name}
+                        </div>`;
+                });
+                
+                browserContent.innerHTML = html;
+            });
+        }
+        
+        function refreshBrowser() {
+            loadFileBrowser(currentBrowserPath);
+        }
+        
+        function selectFolder(path) {
+            selectedScanFolder = path;
+            document.getElementById('selectFolderBtn').disabled = false;
+            document.getElementById('scanDirectBtn').disabled = false;
+            log(`Selected folder: ${path}`);
         }
 
         function detectDevice() {
@@ -395,6 +559,58 @@
             });
         };
 
+        document.getElementById('scanDirectBtn').onclick = function () {
+            if (!selectedScanFolder) {
+                alert("No folder selected for scanning");
+                return;
+            }
+
+            showProgress(true, true);
+            updateProgress(5, true);
+            log(`Starting direct scan of ${selectedScanFolder}`);
+
+            api('/start_scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ decompile_dir: selectedScanFolder })
+            }).then(r => {
+                pollTask(r.task_id, data => {
+                    if (data.meta) {
+                        if (data.meta.progress) {
+                            updateProgress(data.meta.progress, true);
+                        }
+                        
+                        if (data.meta.partial_results) {
+                            renderResults(data.meta.partial_results);
+                        }
+                        
+                        if (data.meta.results) {
+                            currentResults = data.meta.results;
+                            renderResults(currentResults);
+                            updateProgress(100, true);
+                            setTimeout(() => showProgress(false, true), 1000);
+                        }
+                    }
+                }, true);
+            });
+        };
+
+        document.getElementById('selectFolderBtn').onclick = function () {
+            if (selectedScanFolder) {
+                api('/open_folder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: selectedScanFolder })
+                }).then(r => {
+                    if (r.error) {
+                        log(`Error: ${r.error}`);
+                    } else {
+                        log("Folder opened");
+                    }
+                });
+            }
+        };
+
         document.getElementById('openfolderbtn').onclick = function () {
             if (!lastDecompileDir) {
                 alert("No folder to open");
@@ -414,7 +630,7 @@
             });
         };
 
-        function pollTask(taskId, callback) {
+        function pollTask(taskId, callback, isDirect = false) {
             const interval = setInterval(() => {
                 api('/task_status/' + taskId).then(data => {
                     if (data.logs) {
