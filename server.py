@@ -85,10 +85,18 @@ def load_meta_db():
 PICO_DB = load_meta_db()
 
 def analyze_decompile(decompile_dir, task_id):
-    """Fast analysis with optimized file reading"""
+    """Fast analysis with optimized file reading and live updates"""
     set_task(task_id, status='running', log_line=f'Starting scan in {decompile_dir}')
     
     results = []
+    total_files = 0
+    processed_files = 0
+    
+    # Count total files for progress estimation
+    for root, _, files in os.walk(decompile_dir):
+        for file in files:
+            if file.endswith((".smali", ".xml", ".java")) or file == "AndroidManifest.xml":
+                total_files += 1
     
     # Process each SDK
     for sdk_name, sdk_conf in PICO_DB.items():
@@ -115,13 +123,23 @@ def analyze_decompile(decompile_dir, task_id):
                             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                 for line in f:
                                     if init in line:
-                                        sdk_result['found_inits'].append({'path': file_path, 'line': 'N/A', 'code': 'Found'})
+                                        sdk_result['found_inits'].append({
+                                            'path': os.path.relpath(file_path, decompile_dir), 
+                                            'line': 'N/A', 
+                                            'code': line.strip()[:100] + '...' if len(line.strip()) > 100 else line.strip()
+                                        })
                                         found = True
                                         break
                                     if found:
                                         break
                         except:
                             continue
+                        finally:
+                            processed_files += 1
+                            # Update progress every 10 files
+                            if processed_files % 10 == 0:
+                                progress = (processed_files / total_files) * 100
+                                set_task(task_id, meta={'progress': progress, 'partial_results': results})
                 if found:
                     break
             if not found:
@@ -144,7 +162,11 @@ def analyze_decompile(decompile_dir, task_id):
                                             sdk_result['found_privacy_apis'].append({
                                                 'law': law, 
                                                 'api': api, 
-                                                'pos': {'path': file_path, 'line': 'N/A', 'code': 'Found'}
+                                                'pos': {
+                                                    'path': os.path.relpath(file_path, decompile_dir), 
+                                                    'line': 'N/A', 
+                                                    'code': line.strip()[:100] + '...' if len(line.strip()) > 100 else line.strip()
+                                                }
                                             })
                                             found = True
                                             break
@@ -152,6 +174,12 @@ def analyze_decompile(decompile_dir, task_id):
                                             break
                             except:
                                 continue
+                            finally:
+                                processed_files += 1
+                                # Update progress every 10 files
+                                if processed_files % 10 == 0:
+                                    progress = (processed_files / total_files) * 100
+                                    set_task(task_id, meta={'progress': progress, 'partial_results': results})
                     if found:
                         break
                 if not found:
@@ -160,14 +188,16 @@ def analyze_decompile(decompile_dir, task_id):
         
         sdk_result['pvp_triggered'] = sorted(list(pvp))
         results.append(sdk_result)
-        set_task(task_id, log_line=f'Completed {sdk_name}')
+        
+        # Update task with partial results after each SDK
+        set_task(task_id, log_line=f'Completed {sdk_name}', meta={'progress': (processed_files / total_files) * 100, 'partial_results': results})
     
     # Save results
     out_path = os.path.join(decompile_dir, "picoscan_results.json")
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
     
-    set_task(task_id, status='finished', log_line=f'Scan complete: {out_path}', meta={'results': results})
+    set_task(task_id, status='finished', log_line=f'Scan complete: {out_path}', meta={'results': results, 'progress': 100})
 
 # ---------------- Endpoints ----------------
 @app.route('/device')
