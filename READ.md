@@ -37,36 +37,6 @@ Step 6: Report Generation
 # Flowchart of Privacy Scanning Process
 <img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/b758965c-b563-434e-9af7-4bfdf9e77308" />
 
-# Tools Required
-* Nox Player (or any Android emulator / real device) - Used to run apps and pull APKs via ADB.
-* ADB (Android Debug Bridge) - To connect with emulator/device and pull APK files.
-* apktool - For decompiling APK files into smali and XML files.
-* Python 3.9+ - For running the scanner.
-Dependencies: pip install tabulate
-
-# Setup (Manual flow)
-- Decompile APK with apktool
-apktool d app.apk -o app_decompiled -f
-
-- Save your structured SDK rules as pico_meta_db.json in the project directory.
-- Save scanner script as scan_decompile.py (provided in this repo).
-
-# Usage
-- Run the scanner:
-python scan_decompile.py
-
-- Enter the decompiled APK folder path when prompted:
-Enter path to decompiled APK folder: /path/to/app_decompiled
-
-- Traverse all files (AndroidManifest.xml, .smali, .xml, .java).
-Match against PICO DB entries, Identify found/missing APIs, Map issues to PVP violations.
-
-# Output:
-An HTML report (scan_report.html) with a table view
-
-#
-#
-
 # Automated Flow (Web Server + UI)
 Instead of decompiling manually and running the scanner yourself, this version provides a web dashboard where everything is automated:
 - Connect to emulator/device via ADB
