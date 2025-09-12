@@ -7,28 +7,28 @@ Step 1: Initialization
 -	Connect to Android device/emulator via ADB.
 -	Pull the target APK to local storage.
 -	Load PICO DB into memory.
-* Ensures the environment is set up and the knowledge base (PICO DB) is ready for pattern matching.
+*** Ensures the environment is set up and the knowledge base (PICO DB) is ready for pattern matching.
 
 Step 2: Decomplication
 -	Install Apktool to decompile the APK into smali code + resources.
 -	Store the decompiled directory for analysis.
-* For the static analysis, this requires source like files (smali) rather than raw binaries.
+**** For the static analysis, this requires source like files (smali) rather than raw binaries.
 
 Step 3: File Preprocessing
 -	Traverse all decompiled files (.smali, AndroidManifest.xml, config files).
 -	Convert file content into searchable text (UTF-8 strings + extracted ASCII).
-* Normalizing the file content to allow the PICO DB to match patterns across pattern scanning works across multiple file types.
+**** Normalizing the file content to allow the PICO DB to match patterns across pattern scanning works across multiple file types.
 
 Step 4: SDK Signature Matching (PICO DB)
 -	Retrieve defined API patterns (functions, classes, init calls).
 -	Search across the decompiled text corpus.
-* For the SDK APIs found and matched, return signatures detected with the PICO DB and for Missing APIs, return expected but absent.
+**** For the SDK APIs found and matched, return signatures detected with the PICO DB and for Missing APIs, return expected but absent.
 
 Step 5: Compliance Evaluation (PICO DB)
 -	For each SDK with matches with the PICO DB, retrieve with associated laws (GDPR, COPPA, CCPA, etc.).
 -	Check for metadata rules (consent checks, opt-out APIs).
 -	Identify Policy Violation Points (PVPs) when APIs are misused or missing.
-* Links technical patterns to real compliance concerns on the PICO DB.
+**** Links technical patterns to real compliance concerns on the PICO DB.
 
 Step 6: Report Generation
 -	Aggregate results into structured JSON by providing auditors and developers with a clear, actionable privacy compliance report.
