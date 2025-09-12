@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>PICO APK Scanner</title>
+    <title>PICO APK Scanner - Smart Real-Time Analysis</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -136,9 +136,9 @@
             display: none;
         }
 
-        .sdk-details.show {
-            display: block;
-        }
+            .sdk-details.show {
+                display: block;
+            }
 
         .finding {
             margin: 5px 0;
@@ -174,25 +174,25 @@
             border-radius: 4px;
         }
 
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 10px 16px;
-            transition: 0.3s;
-            color: #333;
-        }
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 10px 16px;
+                transition: 0.3s;
+                color: #333;
+            }
 
-        .tab button:hover {
-            background-color: #ddd;
-        }
+                .tab button:hover {
+                    background-color: #ddd;
+                }
 
-        .tab button.active {
-            background-color: #4CAF50;
-            color: white;
-        }
+                .tab button.active {
+                    background-color: #4CAF50;
+                    color: white;
+                }
 
         .tabcontent {
             display: none;
@@ -216,9 +216,9 @@
             border-bottom: 1px solid #eee;
         }
 
-        .file-item:hover {
-            background-color: #f0f0f0;
-        }
+            .file-item:hover {
+                background-color: #f0f0f0;
+            }
 
         .folder-icon:before {
             content: "📁 ";
@@ -227,10 +227,48 @@
         .file-icon:before {
             content: "📄 ";
         }
+
+        .current-path {
+            margin: 10px 0;
+            padding: 5px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .selected-folder {
+            background-color: #e6f7ff;
+            border: 2px solid #0070c0;
+        }
+
+        .manual-path-input {
+            margin: 10px 0;
+            padding: 8px;
+            width: 70%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .live-results {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .current-file {
+            margin: 5px 0;
+            padding: 3px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
-    <h1>PICO APK Scanner</h1>
+    <h1>PICO APK Scanner - Smart Real-Time Analysis</h1>
 
     <div class="tab">
         <button class="tablinks active" onclick="openTab(event, 'FullProcessTab')">Full Process</button>
@@ -241,12 +279,13 @@
     <div id="FullProcessTab" class="tabcontent" style="display: block;">
         <div class="panel">
             <h3>Device Status</h3>
-            <div id="device">Detecting...</div>
+            <div id="device">Detecting devices...</div>
+            <button onclick="refreshDevices()">Refresh Devices</button>
         </div>
 
         <div class="panel">
             <h3>Installed Apps</h3>
-            <div id="appslist">Loading...</div>
+            <div id="appslist">Select a device to view apps</div>
         </div>
 
         <div class="panel">
@@ -265,6 +304,7 @@
             <div class="progress-container" id="progressContainer" style="display: none;">
                 <div class="progress-bar" id="progressBar"></div>
                 <div id="progressText" style="text-align: center; margin-top: 5px;">0%</div>
+                <div id="currentFile" class="current-file">Current file: None</div>
             </div>
         </div>
     </div>
@@ -274,19 +314,38 @@
         <div class="panel">
             <h3>Direct Scan</h3>
             <p>Select a decompiled APK folder to scan directly:</p>
-            
+
+            <div class="current-path" id="currentPath">Current path: .</div>
+
             <div class="file-browser" id="fileBrowser">
                 <div id="browserContent">Loading...</div>
             </div>
-            
-            <button id="selectFolderBtn" disabled>Select This Folder</button>
+
+            <div id="selectedFolderInfo" style="display: none; margin: 10px 0; padding: 10px; background: #e6f7ff; border-radius: 4px;">
+                <strong>Selected folder:</strong> <span id="selectedFolderPath"></span>
+            </div>
+
+            <h4>Or enter path manually:</h4>
+            <input type="text" id="manualPathInput" class="manual-path-input" placeholder="C:\path\to\call_decompiled">
+            <button onclick="selectManualPath()">Select Manual Path</button>
+
+            <br><br>
             <button id="scanDirectBtn" disabled>Start Scan</button>
             <button id="refreshBrowserBtn" onclick="refreshBrowser()">Refresh</button>
-            
+            <button id="browseHomeBtn" onclick="loadFileBrowser('.')">Home Directory</button>
+
             <div class="progress-container" id="directProgressContainer" style="display: none;">
                 <div class="progress-bar" id="directProgressBar"></div>
                 <div id="directProgressText" style="text-align: center; margin-top: 5px;">0%</div>
+                <div id="directCurrentFile" class="current-file">Current file: None</div>
             </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Live Scan Progress</h3>
+        <div id="liveResults" class="live-results">
+            No scan in progress. Results will appear here in real-time.
         </div>
     </div>
 
@@ -308,6 +367,7 @@
         let expandedSDKs = {};
         let currentBrowserPath = '.';
         let selectedScanFolder = null;
+        let currentDevice = null;
 
         function api(url, options) {
             return fetch(url, options).then(r => r.json());
@@ -331,6 +391,11 @@
             document.getElementById(text).innerText = Math.round(percent) + '%';
         }
 
+        function updateCurrentFile(filename, isDirect = false) {
+            const element = isDirect ? 'directCurrentFile' : 'currentFile';
+            document.getElementById(element).innerText = `Current file: ${filename || 'None'}`;
+        }
+
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
             tabcontent = document.getElementsByClassName("tabcontent");
@@ -343,74 +408,37 @@
             }
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
-            
+
             // Load file browser when Direct Scan tab is opened
             if (tabName === 'DirectScanTab') {
                 loadFileBrowser('.');
+            } else if (tabName === 'FullProcessTab') {
+                refreshDevices();
             }
         }
 
-        function loadFileBrowser(path) {
-            const browserContent = document.getElementById('browserContent');
-            browserContent.innerHTML = "Loading...";
-            
-            api('/browse_folder?path=' + encodeURIComponent(path)).then(r => {
-                if (r.error) {
-                    browserContent.innerHTML = `<span class="status status-error">${r.error}</span>`;
-                    return;
-                }
-                
-                currentBrowserPath = r.path;
-                let html = '';
-                
-                // Add parent directory link if not at root
-                if (r.path !== '.') {
-                    const parentPath = r.path.split('/').slice(0, -1).join('/') || '.';
-                    html += `<div class="file-item" onclick="loadFileBrowser('${parentPath}')">
-                            <span class="folder-icon"></span>..
-                        </div>`;
-                }
-                
-                // Add directories first
-                r.items.filter(item => item.is_dir).forEach(item => {
-                    html += `<div class="file-item" onclick="loadFileBrowser('${item.path}')">
-                            <span class="folder-icon"></span>${item.name}
-                        </div>`;
-                });
-                
-                // Then add files
-                r.items.filter(item => !item.is_dir).forEach(item => {
-                    html += `<div class="file-item" onclick="selectFolder('${item.path}')">
-                            <span class="file-icon"></span>${item.name}
-                        </div>`;
-                });
-                
-                browserContent.innerHTML = html;
-            });
-        }
-        
-        function refreshBrowser() {
-            loadFileBrowser(currentBrowserPath);
-        }
-        
-        function selectFolder(path) {
-            selectedScanFolder = path;
-            document.getElementById('selectFolderBtn').disabled = false;
-            document.getElementById('scanDirectBtn').disabled = false;
-            log(`Selected folder: ${path}`);
-        }
-
-        function detectDevice() {
+        function refreshDevices() {
             api('/device').then(r => {
                 const deviceEl = document.getElementById('device');
-                deviceEl.innerHTML = r.device ?
-                    `<span class="status status-finished">Connected: ${r.device}</span>` :
-                    `<span class="status status-error">No device connected</span>`;
-                loadApps();
+
+                if (r.device && r.device.length) {
+                    let html = '';
+                    r.device.forEach(device => {
+                        html += `<span class="status status-finished">${device}</span> `;
+                    });
+                    deviceEl.innerHTML = html;
+                    currentDevice = r.device[0];
+                    loadApps();
+                } else {
+                    deviceEl.innerHTML = '<span class="status status-error">No devices found</span>';
+                    currentDevice = null;
+                }
             });
         }
 
         function loadApps() {
+            if (!currentDevice) return;
+
             const appsList = document.getElementById('appslist');
             appsList.innerHTML = "Loading apps...";
 
@@ -423,14 +451,118 @@
                 let html = '<div class="app-list"><table><tr><th>#</th><th>App</th><th>Package</th><th></th></tr>';
                 r.apps.forEach(app => {
                     html += `<tr>
-                            <td>${app.index}</td>
-                            <td>${app.short}</td>
-                            <td>${app.package}</td>
-                            <td><button onclick="selectApp('${app.package}')">Select</button></td>
-                        </tr>`;
+                                <td>${app.index}</td>
+                                <td>${app.short}</td>
+                                <td>${app.package}</td>
+                                <td><button onclick="selectApp('${app.package}')">Select</button></td>
+                            </tr>`;
                 });
                 html += '</table></div>';
                 appsList.innerHTML = html;
+            });
+        }
+
+        function loadFileBrowser(path) {
+            const browserContent = document.getElementById('browserContent');
+            browserContent.innerHTML = "Loading...";
+
+            api('/browse_folder?path=' + encodeURIComponent(path)).then(r => {
+                if (r.error) {
+                    browserContent.innerHTML = `<span class="status status-error">Error: ${r.error}</span>`;
+                    return;
+                }
+
+                currentBrowserPath = r.path;
+                document.getElementById('currentPath').innerText = `Current path: ${r.path}`;
+
+                let html = '';
+
+                // Add parent directory link if not at root
+                if (r.path !== '.' && r.path !== '/') {
+                    const parentPath = os.path.dirname(r.path);
+                    html += `<div class="file-item" onclick="loadFileBrowser('${parentPath}')">
+                                <span class="folder-icon"></span>..
+                            </div>`;
+                }
+
+                // Add directories first
+                r.items.filter(item => item.is_dir).forEach(item => {
+                    html += `<div class="file-item" onclick="selectFolder('${item.path}')">
+                                <span class="folder-icon"></span>${item.name}
+                            </div>`;
+                });
+
+                // Then add files (but we're only interested in directories for scanning)
+                r.items.filter(item => !item.is_dir).forEach(item => {
+                    html += `<div class="file-item">
+                                <span class="file-icon"></span>${item.name}
+                            </div>`;
+                });
+
+                if (r.items.length === 0) {
+                    html = '<div class="file-item">No items found in this directory</div>';
+                }
+
+                browserContent.innerHTML = html;
+            }).catch(err => {
+                browserContent.innerHTML = `<span class="status status-error">Error loading directory: ${err}</span>`;
+            });
+        }
+
+        function refreshBrowser() {
+            loadFileBrowser(currentBrowserPath);
+        }
+
+        function selectFolder(path) {
+            selectedScanFolder = path;
+
+            // Update UI to show selected folder
+            document.getElementById('selectedFolderInfo').style.display = 'block';
+            document.getElementById('selectedFolderPath').textContent = path;
+
+            // Enable scan button
+            document.getElementById('scanDirectBtn').disabled = false;
+
+            log(`Selected folder: ${path}`);
+
+            // Highlight the selected folder
+            const items = document.querySelectorAll('.file-item');
+            items.forEach(item => {
+                item.classList.remove('selected-folder');
+                if (item.textContent.includes(path.split('/').pop().split('\\').pop())) {
+                    item.classList.add('selected-folder');
+                }
+            });
+        }
+
+        function selectManualPath() {
+            const manualPath = document.getElementById('manualPathInput').value;
+            if (!manualPath) {
+                alert("Please enter a folder path");
+                return;
+            }
+
+            // Test if the path exists by trying to browse it
+            api('/browse_folder?path=' + encodeURIComponent(manualPath)).then(r => {
+                if (r.error) {
+                    log(`Error: ${r.error}`);
+                    alert(`Invalid path: ${r.error}`);
+                    return;
+                }
+
+                selectedScanFolder = manualPath;
+
+                // Update UI to show selected folder
+                document.getElementById('selectedFolderInfo').style.display = 'block';
+                document.getElementById('selectedFolderPath').textContent = manualPath;
+
+                // Enable scan button
+                document.getElementById('scanDirectBtn').disabled = false;
+
+                log(`Selected folder: ${manualPath}`);
+            }).catch(err => {
+                log(`Error: ${err}`);
+                alert(`Invalid path: ${err}`);
             });
         }
 
@@ -446,9 +578,9 @@
                     let html = '<table><tr><th>Path</th><th></th></tr>';
                     r.paths.forEach((path, i) => {
                         html += `<tr>
-                                <td>${path}</td>
-                                <td><button onclick="selectApk('${path}')">Select</button></td>
-                            </tr>`;
+                                    <td>${path}</td>
+                                    <td><button onclick="selectApk('${path}')">Select</button></td>
+                                </tr>`;
                     });
                     html += '</table>';
                     apksList.innerHTML = html;
@@ -543,11 +675,16 @@
                         if (data.meta.progress) {
                             updateProgress(data.meta.progress);
                         }
-                        
+
                         if (data.meta.partial_results) {
                             renderResults(data.meta.partial_results);
+                            updateLiveResults(data.meta.partial_results);
                         }
-                        
+
+                        if (data.meta.current_file) {
+                            updateCurrentFile(data.meta.current_file);
+                        }
+
                         if (data.meta.results) {
                             currentResults = data.meta.results;
                             renderResults(currentResults);
@@ -579,11 +716,16 @@
                         if (data.meta.progress) {
                             updateProgress(data.meta.progress, true);
                         }
-                        
+
                         if (data.meta.partial_results) {
                             renderResults(data.meta.partial_results);
+                            updateLiveResults(data.meta.partial_results);
                         }
-                        
+
+                        if (data.meta.current_file) {
+                            updateCurrentFile(data.meta.current_file, true);
+                        }
+
                         if (data.meta.results) {
                             currentResults = data.meta.results;
                             renderResults(currentResults);
@@ -593,22 +735,6 @@
                     }
                 }, true);
             });
-        };
-
-        document.getElementById('selectFolderBtn').onclick = function () {
-            if (selectedScanFolder) {
-                api('/open_folder', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: selectedScanFolder })
-                }).then(r => {
-                    if (r.error) {
-                        log(`Error: ${r.error}`);
-                    } else {
-                        log("Folder opened");
-                    }
-                });
-            }
         };
 
         document.getElementById('openfolderbtn').onclick = function () {
@@ -641,14 +767,58 @@
                         });
                     }
 
+                    if (data.meta) {
+                        if (data.meta.progress) {
+                            updateProgress(data.meta.progress, isDirect);
+                        }
+
+                        if (data.meta.partial_results) {
+                            renderResults(data.meta.partial_results);
+                            updateLiveResults(data.meta.partial_results);
+                        }
+
+                        if (data.meta.current_file) {
+                            updateCurrentFile(data.meta.current_file, isDirect);
+                        }
+                    }
+
                     if (['finished', 'error'].includes(data.status)) {
                         clearInterval(interval);
-                        callback(data);
-                    } else {
                         callback(data);
                     }
                 });
             }, 1000);
+        }
+
+        function updateLiveResults(results) {
+            if (!results || results.length === 0) {
+                document.getElementById('liveResults').innerHTML = "No results yet";
+                return;
+            }
+
+            let html = '<h4>Live Scan Results</h4>';
+            let totalFindings = 0;
+            let totalPVPs = 0;
+
+            results.forEach(r => {
+                const findings = r.found_inits.length + r.found_privacy_apis.length;
+                const pvps = r.pvp_triggered.length;
+
+                totalFindings += findings;
+                totalPVPs += pvps;
+
+                html += `
+                    <div class="sdk-result">
+                        <div class="sdk-header">
+                            <strong>${r.sdk}</strong>
+                            <span>${findings} findings, ${pvps} PVPs</span>
+                        </div>
+                    </div>
+                    `;
+            });
+
+            html += `<div class="status">Total: ${totalFindings} findings, ${totalPVPs} PVPs</div>`;
+            document.getElementById('liveResults').innerHTML = html;
         }
 
         function toggleSDK(sdk) {
@@ -664,7 +834,7 @@
             }
 
             document.getElementById('resultsCount').innerText = `(${results.length} SDKs analyzed)`;
-            
+
             let html = '';
             let pvpCount = 0;
             let findingCount = 0;
@@ -673,78 +843,87 @@
                 const findings = r.found_inits.length + r.found_privacy_apis.length;
                 const missing = r.missing_privacy_apis.length;
                 const pvps = r.pvp_triggered.length;
-                
+
                 pvpCount += pvps;
                 findingCount += findings;
 
                 const riskLevel = pvps > 0 ? 'high' : (missing > 0 ? 'medium' : 'low');
-                
+
                 html += `
-                <div class="sdk-result">
-                    <div class="sdk-header" onclick="toggleSDK('${r.sdk}')">
-                        <div>
-                            <strong>${r.sdk}</strong> 
-                            <span class="risk-${riskLevel}">(${r.laws})</span>
+                    <div class="sdk-result">
+                        <div class="sdk-header" onclick="toggleSDK('${r.sdk}')">
+                            <div>
+                                <strong>${r.sdk}</strong>
+                                <span class="risk-${riskLevel}">(${r.laws})</span>
+                            </div>
+                            <div>
+                                <span class="status">${findings} findings, ${missing} missing, ${pvps} PVPs</span>
+                                <button>${expandedSDKs[r.sdk] ? 'Collapse' : 'Expand'}</button>
+                            </div>
                         </div>
-                        <div>
-                            <span class="status">${findings} findings, ${missing} missing, ${pvps} PVPs</span>
-                            <button>${expandedSDKs[r.sdk] ? 'Collapse' : 'Expand'}</button>
+                        <div class="sdk-details ${expandedSDKs[r.sdk] ? 'show' : ''}">
+                            <h4>Initialization Patterns Found:</h4>
+                            ${r.found_inits.length > 0 ?
+                        r.found_inits.map(init => `
+                                    <div class="finding">
+                                        <strong>${init.path}</strong> (Line ${init.line})<br>
+                                        <div class="finding-code">${init.code}</div>
+                                    </div>
+                                `).join('') :
+                        '<p>No initialization patterns found</p>'
+                    }
+
+                            <h4>Privacy APIs Found:</h4>
+                            ${r.found_privacy_apis.length > 0 ?
+                        r.found_privacy_apis.map(api => `
+                                    <div class="finding">
+                                        <strong>${api.law}:</strong> ${api.api} in ${api.path} (Line ${api.line})<br>
+                                        <div class="finding-code">${api.code}</div>
+                                    </div>
+                                `).join('') :
+                        '<p>No privacy APIs found</p>'
+                    }
+
+                            <h4>Missing Privacy APIs:</h4>
+                            ${r.missing_privacy_apis.length > 0 ?
+                        `<ul>${r.missing_privacy_apis.map(m => `<li>${m}</li>`).join('')}</ul>` :
+                        '<p>No missing privacy APIs</p>'
+                    }
+
+                            <h4>PVP Triggers:</h4>
+                            ${r.pvp_triggered.length > 0 ?
+                        `<ul>${r.pvp_triggered.map(pvp => `<li class="risk-high">${pvp}</li>`).join('')}</ul>` :
+                        '<p>No PVP triggers</p>'
+                    }
                         </div>
                     </div>
-                    <div class="sdk-details ${expandedSDKs[r.sdk] ? 'show' : ''}">
-                        <h4>Initialization Patterns Found:</h4>
-                        ${r.found_inits.length > 0 ? 
-                            r.found_inits.map(init => `
-                                <div class="finding">
-                                    <strong>${init.path}</strong><br>
-                                    <div class="finding-code">${init.code}</div>
-                                </div>
-                            `).join('') : 
-                            '<p>No initialization patterns found</p>'
-                        }
-                        
-                        <h4>Privacy APIs Found:</h4>
-                        ${r.found_privacy_apis.length > 0 ? 
-                            r.found_privacy_apis.map(api => `
-                                <div class="finding">
-                                    <strong>${api.law}:</strong> ${api.api} in ${api.pos.path}<br>
-                                    <div class="finding-code">${api.pos.code}</div>
-                                </div>
-                            `).join('') : 
-                            '<p>No privacy APIs found</p>'
-                        }
-                        
-                        <h4>Missing Privacy APIs:</h4>
-                        ${r.missing_privacy_apis.length > 0 ? 
-                            `<ul>${r.missing_privacy_apis.map(m => `<li>${m}</li>`).join('')}</ul>` : 
-                            '<p>No missing privacy APIs</p>'
-                        }
-                        
-                        <h4>PVP Triggers:</h4>
-                        ${r.pvp_triggered.length > 0 ? 
-                            `<ul>${r.pvp_triggered.map(pvp => `<li class="risk-high">${pvp}</li>`).join('')}</ul>` : 
-                            '<p>No PVP triggers</p>'
-                        }
-                    </div>
-                </div>
-                `;
+                    `;
             });
 
             // Add summary at the top
             const summaryHtml = `
-                <div class="sdk-result" style="background-color: #f8f8f8;">
-                    <h3>Scan Summary</h3>
-                    <p>Total SDKs analyzed: ${results.length}</p>
-                    <p>Total findings: ${findingCount}</p>
-                    <p class="${pvpCount > 0 ? 'risk-high' : 'risk-low'}">Total PVP triggers: ${pvpCount}</p>
-                </div>
-            `;
+                    <div class="sdk-result" style="background-color: #f8f8f8;">
+                        <h3>Scan Summary</h3>
+                        <p>Total SDKs analyzed: ${results.length}</p>
+                        <p>Total findings: ${findingCount}</p>
+                        <p class="${pvpCount > 0 ? 'risk-high' : 'risk-low'}">Total PVP triggers: ${pvpCount}</p>
+                    </div>
+                `;
 
             document.getElementById('results').innerHTML = summaryHtml + html;
         }
 
+        // Simple path utilities since we can't import Node.js path module in browser
+        const os = {
+            path: {
+                dirname: function (path) {
+                    return path.replace(/\\/g, '/').replace(/\/[^\/]*$/, '') || '.';
+                }
+            }
+        };
+
         // Initialize
-        detectDevice();
+        refreshDevices();
     </script>
 </body>
 </html>
