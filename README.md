@@ -40,7 +40,7 @@ Step 6: Report Generation
 
 
 # Flowchart of Privacy Scanning Process
-<img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/b758965c-b563-434e-9af7-4bfdf9e77308" />
+<img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/baf3337d-9f8f-4377-8bbd-79480aef49e9" />
 
 # Automated Flow (Web Server + UI)
 Instead of decompiling manually and running the scanner yourself, this version provides a web dashboard where everything is automated:
