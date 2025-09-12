@@ -75,6 +75,7 @@ Open http://127.0.0.1:5000 in your browser.
 - Emulator/UI Scanner
 <img width="1366" height="635" alt="sd" src="https://github.com/user-attachments/assets/1864d4ce-d644-4228-ba62-065a5318bdbc" />
 
+
 - Decompiled file
 <img width="807" height="413" alt="image" src="https://github.com/user-attachments/assets/5c12bfe1-9ee1-4db8-8aa4-42c20703bafd" />
 
