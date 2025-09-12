@@ -86,6 +86,6 @@ Dependencies: pip install flask flask-cors
 - Scanning already decompiled file with apktool (manual decompilation)
 <img width="1330" height="609" alt="deo" src="https://github.com/user-attachments/assets/9cbea7d4-ad29-480a-a7bc-cef9a8aaeb53" />
 
-- Scanned Result
+- Scanned Result (
 <img width="1346" height="578" alt="image" src="https://github.com/user-attachments/assets/edbb2585-2f40-4aed-9236-d8fb5f297d8f" />
 
