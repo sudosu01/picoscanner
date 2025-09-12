@@ -89,3 +89,7 @@ Dependencies: pip install flask flask-cors
 - Scanned Result (Match DB with findings)
 <img width="1346" height="578" alt="image" src="https://github.com/user-attachments/assets/edbb2585-2f40-4aed-9236-d8fb5f297d8f" />
 
+<img width="1365" height="700" alt="App lovin" src="https://github.com/user-attachments/assets/8b8c8163-de0b-4b06-bc7c-98653ab79c61" />
+
+<img width="1316" height="586" alt="tAboola" src="https://github.com/user-attachments/assets/82a977e2-4c97-48cf-925d-e20adebc8446" />
+
