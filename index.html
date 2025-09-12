@@ -116,6 +116,56 @@
             width: 0%;
             transition: width 0.3s;
         }
+
+        .sdk-result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .sdk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .sdk-details {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .sdk-details.show {
+            display: block;
+        }
+
+        .finding {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .finding-code {
+            font-family: monospace;
+            background: #eee;
+            padding: 3px;
+            border-radius: 3px;
+        }
+
+        .risk-high {
+            color: #c00;
+            font-weight: bold;
+        }
+
+        .risk-medium {
+            color: #c90;
+        }
+
+        .risk-low {
+            color: #090;
+        }
     </style>
 </head>
 <body>
@@ -146,6 +196,7 @@
 
         <div class="progress-container" id="progressContainer" style="display: none;">
             <div class="progress-bar" id="progressBar"></div>
+            <div id="progressText" style="text-align: center; margin-top: 5px;">0%</div>
         </div>
     </div>
 
@@ -155,7 +206,7 @@
     </div>
 
     <div class="panel">
-        <h3>Scan Results</h3>
+        <h3>Scan Results <span id="resultsCount"></span></h3>
         <div id="results">No results yet</div>
     </div>
 
@@ -163,6 +214,8 @@
         let selectedPackage = null;
         let selectedApkPath = null;
         let lastDecompileDir = null;
+        let currentResults = [];
+        let expandedSDKs = {};
 
         function api(url, options) {
             return fetch(url, options).then(r => r.json());
@@ -180,6 +233,7 @@
 
         function updateProgress(percent) {
             document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').innerText = Math.round(percent) + '%';
         }
 
         function detectDevice() {
@@ -312,7 +366,7 @@
             }
 
             showProgress(true);
-            updateProgress(90);
+            updateProgress(5);
             log(`Starting scan of ${lastDecompileDir}`);
 
             api('/start_scan', {
@@ -321,11 +375,22 @@
                 body: JSON.stringify({ decompile_dir: lastDecompileDir })
             }).then(r => {
                 pollTask(r.task_id, data => {
-                    if (data.meta && data.meta.results) {
-                        renderResults(data.meta.results);
-                        updateProgress(100);
+                    if (data.meta) {
+                        if (data.meta.progress) {
+                            updateProgress(data.meta.progress);
+                        }
+                        
+                        if (data.meta.partial_results) {
+                            renderResults(data.meta.partial_results);
+                        }
+                        
+                        if (data.meta.results) {
+                            currentResults = data.meta.results;
+                            renderResults(currentResults);
+                            updateProgress(100);
+                            setTimeout(() => showProgress(false), 1000);
+                        }
                     }
-                    setTimeout(() => showProgress(false), 1000);
                 });
             });
         };
@@ -363,35 +428,103 @@
                     if (['finished', 'error'].includes(data.status)) {
                         clearInterval(interval);
                         callback(data);
+                    } else {
+                        callback(data);
                     }
                 });
             }, 1000);
         }
 
+        function toggleSDK(sdk) {
+            expandedSDKs[sdk] = !expandedSDKs[sdk];
+            renderResults(currentResults);
+        }
+
         function renderResults(results) {
             if (!results || results.length === 0) {
                 document.getElementById('results').innerHTML = "No results found";
+                document.getElementById('resultsCount').innerText = '';
                 return;
             }
 
-            let html = '<table><tr><th>SDK</th><th>Laws</th><th>Findings</th><th>Missing</th><th>PVPs</th></tr>';
+            document.getElementById('resultsCount').innerText = `(${results.length} SDKs analyzed)`;
+            
+            let html = '';
+            let pvpCount = 0;
+            let findingCount = 0;
 
             results.forEach(r => {
                 const findings = r.found_inits.length + r.found_privacy_apis.length;
                 const missing = r.missing_privacy_apis.length;
                 const pvps = r.pvp_triggered.length;
+                
+                pvpCount += pvps;
+                findingCount += findings;
 
-                html += `<tr>
-                        <td>${r.sdk}</td>
-                        <td>${r.laws}</td>
-                        <td>${findings} found</td>
-                        <td>${missing} missing</td>
-                        <td>${pvps} PVPs</td>
-                    </tr>`;
+                const riskLevel = pvps > 0 ? 'high' : (missing > 0 ? 'medium' : 'low');
+                
+                html += `
+                <div class="sdk-result">
+                    <div class="sdk-header" onclick="toggleSDK('${r.sdk}')">
+                        <div>
+                            <strong>${r.sdk}</strong> 
+                            <span class="risk-${riskLevel}">(${r.laws})</span>
+                        </div>
+                        <div>
+                            <span class="status">${findings} findings, ${missing} missing, ${pvps} PVPs</span>
+                            <button>${expandedSDKs[r.sdk] ? 'Collapse' : 'Expand'}</button>
+                        </div>
+                    </div>
+                    <div class="sdk-details ${expandedSDKs[r.sdk] ? 'show' : ''}">
+                        <h4>Initialization Patterns Found:</h4>
+                        ${r.found_inits.length > 0 ? 
+                            r.found_inits.map(init => `
+                                <div class="finding">
+                                    <strong>${init.path}</strong><br>
+                                    <div class="finding-code">${init.code}</div>
+                                </div>
+                            `).join('') : 
+                            '<p>No initialization patterns found</p>'
+                        }
+                        
+                        <h4>Privacy APIs Found:</h4>
+                        ${r.found_privacy_apis.length > 0 ? 
+                            r.found_privacy_apis.map(api => `
+                                <div class="finding">
+                                    <strong>${api.law}:</strong> ${api.api} in ${api.pos.path}<br>
+                                    <div class="finding-code">${api.pos.code}</div>
+                                </div>
+                            `).join('') : 
+                            '<p>No privacy APIs found</p>'
+                        }
+                        
+                        <h4>Missing Privacy APIs:</h4>
+                        ${r.missing_privacy_apis.length > 0 ? 
+                            `<ul>${r.missing_privacy_apis.map(m => `<li>${m}</li>`).join('')}</ul>` : 
+                            '<p>No missing privacy APIs</p>'
+                        }
+                        
+                        <h4>PVP Triggers:</h4>
+                        ${r.pvp_triggered.length > 0 ? 
+                            `<ul>${r.pvp_triggered.map(pvp => `<li class="risk-high">${pvp}</li>`).join('')}</ul>` : 
+                            '<p>No PVP triggers</p>'
+                        }
+                    </div>
+                </div>
+                `;
             });
 
-            html += '</table>';
-            document.getElementById('results').innerHTML = html;
+            // Add summary at the top
+            const summaryHtml = `
+                <div class="sdk-result" style="background-color: #f8f8f8;">
+                    <h3>Scan Summary</h3>
+                    <p>Total SDKs analyzed: ${results.length}</p>
+                    <p>Total findings: ${findingCount}</p>
+                    <p class="${pvpCount > 0 ? 'risk-high' : 'risk-low'}">Total PVP triggers: ${pvpCount}</p>
+                </div>
+            `;
+
+            document.getElementById('results').innerHTML = summaryHtml + html;
         }
 
         // Initialize
