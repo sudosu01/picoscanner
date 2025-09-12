@@ -298,11 +298,29 @@ def start_decompile():
 
 @app.route('/start_scan', methods=['POST'])
 def start_scan():
-    ddir = request.json['decompile_dir']
+    data = request.json
+    ddir = data['decompile_dir']
     task_id = str(uuid.uuid4())
     TASKS[task_id] = {'status': 'queued', 'logs': [], 'meta': {}}
     threading.Thread(target=analyze_decompile, args=(ddir, task_id), daemon=True).start()
     return jsonify({'task_id': task_id})
+
+@app.route('/browse_folder')
+def browse_folder():
+    path = request.args.get('path', '.')
+    try:
+        items = []
+        for item in os.listdir(path):
+            item_path = os.path.join(path, item)
+            items.append({
+                'name': item,
+                'path': item_path,
+                'is_dir': os.path.isdir(item_path),
+                'size': os.path.getsize(item_path) if os.path.isfile(item_path) else 0
+            })
+        return jsonify({'path': path, 'items': items})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/open_folder', methods=['POST'])
 def open_folder():
