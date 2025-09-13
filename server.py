@@ -209,10 +209,10 @@ def analyze_decompile(decompile_dir, task_id):
     total_files = 0
     processed_files = 0
     
-    # Count all text files for progress estimation
+    # Count all text files for progress estimation (excluding our own report files)
     for root, _, files in os.walk(decompile_dir):
         for file in files:
-            if is_text_file(file):
+            if is_text_file(file) and not file.endswith('_results.json'):
                 total_files += 1
     
     # Process each SDK with real-time updates
@@ -235,8 +235,8 @@ def analyze_decompile(decompile_dir, task_id):
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, decompile_dir)
                 
-                # Skip binary files
-                if not is_text_file(file_path):
+                # Skip binary files and our own report files
+                if not is_text_file(file_path) or file.endswith('_results.json'):
                     continue
                     
                 try:
@@ -246,6 +246,13 @@ def analyze_decompile(decompile_dir, task_id):
                     if content:
                         # Analyze content for this SDK's patterns
                         file_findings = analyze_file_content(content, rel_path, sdk_conf)
+                        
+                        # Send immediate notification about findings
+                        for finding in file_findings['found_inits']:
+                            set_task(task_id, log_line=f"FOUND INIT in {rel_path}:{finding['line']} - {finding['pattern']}")
+                        
+                        for finding in file_findings['found_privacy_apis']:
+                            set_task(task_id, log_line=f"FOUND {finding['law'].upper()} API in {rel_path}:{finding['line']} - {finding['api']}")
                         
                         sdk_result['found_inits'].extend(file_findings['found_inits'])
                         sdk_result['found_privacy_apis'].extend(file_findings['found_privacy_apis'])
@@ -262,7 +269,8 @@ def analyze_decompile(decompile_dir, task_id):
                         set_task(task_id, meta={
                             'progress': progress, 
                             'partial_results': partial_results,
-                            'current_file': rel_path
+                            'current_file': rel_path,
+                            'recent_findings': file_findings  # Add recent findings for live display
                         })
                         
                 except Exception as e:
