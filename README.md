@@ -87,8 +87,10 @@ Dependencies: pip install flask flask-cors
 <img width="1330" height="609" alt="deo" src="https://github.com/user-attachments/assets/9cbea7d4-ad29-480a-a7bc-cef9a8aaeb53" />
 
 - Scanned Result (Match DB with findings)
+CallDorado SDK (7 Findings)
 <img width="1361" height="690" alt="image" src="https://github.com/user-attachments/assets/07bd64b0-b60d-4739-8a04-0beec3ac6a2a" />
 
+Taboola SDK (14 Findings)
 <img width="1366" height="693" alt="image" src="https://github.com/user-attachments/assets/738617c1-5739-4665-aae0-27701ddfe433" />
 
 
