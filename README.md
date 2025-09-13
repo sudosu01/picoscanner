@@ -76,7 +76,7 @@ Dependencies: pip install flask flask-cors
 
 # Demo
 
-https://github.com/user-attachments/assets/3175251e-3ec6-42f5-bca5-a917d5fa6fd6
+https://github.com/user-attachments/assets/a0fcb2c6-15d2-408d-a2f0-c94dac7c3731
 
 # Screenshots
 
