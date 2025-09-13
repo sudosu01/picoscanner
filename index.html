@@ -2,24 +2,87 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>PICO APK Scanner - Smart Real-Time Analysis</title>
+    <title>PICO APK Scanner</title>
     <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --panel-bg: white;
+            --panel-border: #ddd;
+            --button-bg: #4CAF50;
+            --button-hover: #45a049;
+            --button-disabled: #ccc;
+            --log-bg: #111;
+            --log-text: #0f0;
+            --status-running: #e6f7ff;
+            --status-running-text: #0070c0;
+            --status-finished: #e6ffed;
+            --status-finished-text: #007000;
+            --status-error: #fff2f0;
+            --status-error-text: #c00;
+            --tab-bg: #f1f1f1;
+            --tab-active: #4CAF50;
+            --file-browser-bg: white;
+            --file-item-hover: #f0f0f0;
+            --exact-match-bg: #ffeb3b;
+            --file-path-bg: #e6f7ff;
+            --finding-bg: #f9f9f9;
+            --finding-code-bg: #eee;
+            --risk-high: #c00;
+            --risk-medium: #c90;
+            --risk-low: #090;
+        }
+
+        .dark-mode {
+            --bg-color: #222;
+            --text-color: #f0f0f0;
+            --panel-bg: #333;
+            --panel-border: #555;
+            --button-bg: #2E7D32;
+            --button-hover: #1B5E20;
+            --button-disabled: #666;
+            --log-bg: #000;
+            --log-text: #0f0;
+            --status-running: #003366;
+            --status-running-text: #4fc3f7;
+            --status-finished: #006400;
+            --status-finished-text: #00e676;
+            --status-error: #4a0000;
+            --status-error-text: #ff5252;
+            --tab-bg: #444;
+            --tab-active: #2E7D32;
+            --file-browser-bg: #333;
+            --file-item-hover: #444;
+            --exact-match-bg: #b38f00;
+            --file-path-bg: #003366;
+            --finding-bg: #3a3a3a;
+            --finding-code-bg: #2a2a2a;
+            --risk-high: #ff5252;
+            --risk-medium: #ffb74d;
+            --risk-low: #69f0ae;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .panel {
-            background: white;
+            background: var(--panel-bg);
             border-radius: 8px;
             padding: 15px;
             margin: 10px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid var(--panel-border);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         h1, h2, h3 {
-            color: #333;
+            color: var(--text-color);
+            transition: color 0.3s;
         }
 
         table {
@@ -29,50 +92,57 @@
         }
 
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             padding: 8px;
             text-align: left;
+            transition: border-color 0.3s;
         }
 
         th {
-            background-color: #f2f2f2;
+            background-color: var(--tab-bg);
+            transition: background-color 0.3s;
         }
 
         #logarea {
             height: 200px;
             overflow: auto;
-            background: #111;
-            color: #0f0;
+            background: var(--log-bg);
+            color: var(--log-text);
             padding: 10px;
             font-family: monospace;
             border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         button {
-            background: #4CAF50;
+            background: var(--button-bg);
             color: white;
             border: none;
             padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
             margin: 5px;
+            transition: background-color 0.3s;
         }
 
             button:disabled {
-                background: #ccc;
+                background: var(--button-disabled);
                 cursor: not-allowed;
             }
 
             button:hover:not(:disabled) {
-                background: #45a049;
+                background: var(--button-hover);
             }
 
         input[type="text"] {
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             border-radius: 4px;
             width: 70%;
             margin: 5px 0;
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
         .status {
@@ -80,21 +150,22 @@
             border-radius: 4px;
             display: inline-block;
             margin: 5px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .status-running {
-            background: #e6f7ff;
-            color: #0070c0;
+            background: var(--status-running);
+            color: var(--status-running-text);
         }
 
         .status-finished {
-            background: #e6ffed;
-            color: #007000;
+            background: var(--status-finished);
+            color: var(--status-finished-text);
         }
 
         .status-error {
-            background: #fff2f0;
-            color: #c00;
+            background: var(--status-error);
+            color: var(--status-error-text);
         }
 
         .app-list {
@@ -104,24 +175,26 @@
 
         .progress-container {
             width: 100%;
-            background-color: #f1f1f1;
+            background-color: var(--tab-bg);
             border-radius: 4px;
             margin: 10px 0;
+            transition: background-color 0.3s;
         }
 
         .progress-bar {
             height: 10px;
-            background-color: #4CAF50;
+            background-color: var(--button-bg);
             border-radius: 4px;
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.3s, background-color 0.3s;
         }
 
         .sdk-result {
             margin: 10px 0;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             border-radius: 4px;
+            transition: border-color 0.3s;
         }
 
         .sdk-header {
@@ -136,89 +209,99 @@
             display: none;
         }
 
-            .sdk-details.show {
-                display: block;
-            }
+        .sdk-details.show {
+            display: block;
+        }
 
         .finding {
             margin: 5px 0;
             padding: 5px;
-            background: #f9f9f9;
+            background: var(--finding-bg);
             border-radius: 4px;
+            transition: background-color 0.3s;
         }
 
         .finding-code {
             font-family: monospace;
-            background: #eee;
+            background: var(--finding-code-bg);
             padding: 3px;
             border-radius: 3px;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow: auto;
+            transition: background-color 0.3s;
         }
 
         .risk-high {
-            color: #c00;
+            color: var(--risk-high);
             font-weight: bold;
         }
 
         .risk-medium {
-            color: #c90;
+            color: var(--risk-medium);
         }
 
         .risk-low {
-            color: #090;
+            color: var(--risk-low);
         }
 
         .tab {
             overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
+            border: 1px solid var(--panel-border);
+            background-color: var(--tab-bg);
             border-radius: 4px;
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
-            .tab button {
-                background-color: inherit;
-                float: left;
-                border: none;
-                outline: none;
-                cursor: pointer;
-                padding: 10px 16px;
-                transition: 0.3s;
-                color: #333;
-            }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: 0.3s;
+            color: var(--text-color);
+        }
 
-                .tab button:hover {
-                    background-color: #ddd;
-                }
+        .tab button:hover {
+            background-color: var(--file-item-hover);
+        }
 
-                .tab button.active {
-                    background-color: #4CAF50;
-                    color: white;
-                }
+        .tab button.active {
+            background-color: var(--tab-active);
+            color: white;
+        }
 
         .tabcontent {
             display: none;
             padding: 6px 12px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--panel-border);
             border-top: none;
             border-radius: 0 0 4px 4px;
+            transition: border-color 0.3s;
         }
 
         .file-browser {
             max-height: 300px;
             overflow-y: auto;
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             padding: 10px;
             margin: 10px 0;
+            background-color: var(--file-browser-bg);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .file-item {
             padding: 5px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--panel-border);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
-            .file-item:hover {
-                background-color: #f0f0f0;
-            }
+        .file-item:hover {
+            background-color: var(--file-item-hover);
+        }
 
         .folder-icon:before {
             content: "📁 ";
@@ -231,48 +314,176 @@
         .current-path {
             margin: 10px 0;
             padding: 5px;
-            background: #f0f0f0;
+            background: var(--tab-bg);
             border-radius: 4px;
             font-family: monospace;
+            transition: background-color 0.3s;
         }
 
         .selected-folder {
-            background-color: #e6f7ff;
-            border: 2px solid #0070c0;
+            background-color: var(--status-running);
+            border: 2px solid var(--status-running-text);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .manual-path-input {
             margin: 10px 0;
             padding: 8px;
             width: 70%;
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             border-radius: 4px;
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
         .live-results {
             max-height: 500px;
             overflow-y: auto;
-            border: 1px solid #ddd;
+            border: 1px solid var(--panel-border);
             padding: 10px;
             margin: 10px 0;
+            transition: border-color 0.3s;
         }
 
         .current-file {
             margin: 5px 0;
             padding: 3px;
-            background: #f0f0f0;
+            background: var(--tab-bg);
             border-radius: 3px;
             font-family: monospace;
             font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .exact-match {
+            background-color: var(--exact-match-bg);
+            padding: 2px;
+            border-radius: 2px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .file-path {
+            font-family: monospace;
+            background-color: var(--file-path-bg);
+            padding: 3px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--button-hover);
+        }
+
+        .export-btn {
+            background: #2196F3;
+        }
+
+        .export-btn:hover {
+            background: #0b7dda;
+        }
+
+        .finding-count {
+            display: inline-block;
+            background: var(--button-bg);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 24px;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+
+        .finding-type {
+            font-weight: bold;
+            margin-top: 10px;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 5px;
+            transition: border-color 0.3s;
+        }
+
+        .finding-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid var(--button-bg);
+            background-color: var(--finding-bg);
+            border-radius: 4px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .law-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .law-gdpr {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .law-us_p {
+            background-color: #F44336;
+            color: white;
+        }
+
+        .law-coppa {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .law-init {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .code-line {
+            display: block;
+            font-family: monospace;
+            white-space: pre;
+            margin: 2px 0;
+        }
+
+        .highlighted-line {
+            background-color: var(--exact-match-bg);
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>PICO APK Scanner - Smart Real-Time Analysis</h1>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+
+    <h1>PICO APK Scanner</h1>
 
     <div class="tab">
         <button class="tablinks active" onclick="openTab(event, 'FullProcessTab')">Full Process</button>
         <button class="tablinks" onclick="openTab(event, 'DirectScanTab')">Direct Scan</button>
+        <button class="tablinks" onclick="openTab(event, 'ResultsTab')">Results</button>
     </div>
 
     <!-- Full Process Tab -->
@@ -314,30 +525,42 @@
         <div class="panel">
             <h3>Direct Scan</h3>
             <p>Select a decompiled APK folder to scan directly:</p>
-
+            
             <div class="current-path" id="currentPath">Current path: .</div>
-
+            
             <div class="file-browser" id="fileBrowser">
                 <div id="browserContent">Loading...</div>
             </div>
-
-            <div id="selectedFolderInfo" style="display: none; margin: 10px 0; padding: 10px; background: #e6f7ff; border-radius: 4px;">
+            
+            <div id="selectedFolderInfo" style="display: none; margin: 10px 0; padding: 10px; background: var(--status-running); border-radius: 4px;">
                 <strong>Selected folder:</strong> <span id="selectedFolderPath"></span>
             </div>
-
+            
             <h4>Or enter path manually:</h4>
             <input type="text" id="manualPathInput" class="manual-path-input" placeholder="C:\path\to\call_decompiled">
             <button onclick="selectManualPath()">Select Manual Path</button>
-
+            
             <br><br>
             <button id="scanDirectBtn" disabled>Start Scan</button>
             <button id="refreshBrowserBtn" onclick="refreshBrowser()">Refresh</button>
             <button id="browseHomeBtn" onclick="loadFileBrowser('.')">Home Directory</button>
-
+            
             <div class="progress-container" id="directProgressContainer" style="display: none;">
                 <div class="progress-bar" id="directProgressBar"></div>
                 <div id="directProgressText" style="text-align: center; margin-top: 5px;">0%</div>
                 <div id="directCurrentFile" class="current-file">Current file: None</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Tab -->
+    <div id="ResultsTab" class="tabcontent">
+        <div class="panel">
+            <h3>Scan Results <span id="resultsCount"></span>
+                <button class="export-btn" onclick="exportResults()">Export Results</button>
+            </h3>
+            <div id="resultsContainer">
+                <div id="results">No results yet. Run a scan to see findings.</div>
             </div>
         </div>
     </div>
@@ -354,11 +577,6 @@
         <div id="logarea"></div>
     </div>
 
-    <div class="panel">
-        <h3>Scan Results <span id="resultsCount"></span></h3>
-        <div id="results">No results yet</div>
-    </div>
-
     <script>
         let selectedPackage = null;
         let selectedApkPath = null;
@@ -368,6 +586,24 @@
         let currentBrowserPath = '.';
         let selectedScanFolder = null;
         let currentDevice = null;
+        let isDarkMode = false;
+
+        // Theme toggle functionality
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            document.getElementById('themeToggle').textContent = isDarkMode ? '☀️' : '🌙';
+            
+            // Save preference to localStorage
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+
+        // Check for saved theme preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            isDarkMode = true;
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeToggle').textContent = '☀️';
+        }
 
         function api(url, options) {
             return fetch(url, options).then(r => r.json());
@@ -408,19 +644,21 @@
             }
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
-
+            
             // Load file browser when Direct Scan tab is opened
             if (tabName === 'DirectScanTab') {
                 loadFileBrowser('.');
             } else if (tabName === 'FullProcessTab') {
                 refreshDevices();
+            } else if (tabName === 'ResultsTab' && currentResults.length > 0) {
+                renderResults(currentResults);
             }
         }
 
         function refreshDevices() {
             api('/device').then(r => {
                 const deviceEl = document.getElementById('device');
-
+                
                 if (r.device && r.device.length) {
                     let html = '';
                     r.device.forEach(device => {
@@ -438,7 +676,7 @@
 
         function loadApps() {
             if (!currentDevice) return;
-
+            
             const appsList = document.getElementById('appslist');
             appsList.innerHTML = "Loading apps...";
 
@@ -451,11 +689,11 @@
                 let html = '<div class="app-list"><table><tr><th>#</th><th>App</th><th>Package</th><th></th></tr>';
                 r.apps.forEach(app => {
                     html += `<tr>
-                                <td>${app.index}</td>
-                                <td>${app.short}</td>
-                                <td>${app.package}</td>
-                                <td><button onclick="selectApp('${app.package}')">Select</button></td>
-                            </tr>`;
+                            <td>${app.index}</td>
+                            <td>${app.short}</td>
+                            <td>${app.package}</td>
+                            <td><button onclick="selectApp('${app.package}')">Select</button></td>
+                        </tr>`;
                 });
                 html += '</table></div>';
                 appsList.innerHTML = html;
@@ -465,66 +703,66 @@
         function loadFileBrowser(path) {
             const browserContent = document.getElementById('browserContent');
             browserContent.innerHTML = "Loading...";
-
+            
             api('/browse_folder?path=' + encodeURIComponent(path)).then(r => {
                 if (r.error) {
                     browserContent.innerHTML = `<span class="status status-error">Error: ${r.error}</span>`;
                     return;
                 }
-
+                
                 currentBrowserPath = r.path;
                 document.getElementById('currentPath').innerText = `Current path: ${r.path}`;
-
+                
                 let html = '';
-
+                
                 // Add parent directory link if not at root
                 if (r.path !== '.' && r.path !== '/') {
                     const parentPath = os.path.dirname(r.path);
                     html += `<div class="file-item" onclick="loadFileBrowser('${parentPath}')">
-                                <span class="folder-icon"></span>..
-                            </div>`;
+                            <span class="folder-icon"></span>..
+                        </div>`;
                 }
-
+                
                 // Add directories first
                 r.items.filter(item => item.is_dir).forEach(item => {
                     html += `<div class="file-item" onclick="selectFolder('${item.path}')">
-                                <span class="folder-icon"></span>${item.name}
-                            </div>`;
+                            <span class="folder-icon"></span>${item.name}
+                        </div>`;
                 });
-
+                
                 // Then add files (but we're only interested in directories for scanning)
                 r.items.filter(item => !item.is_dir).forEach(item => {
                     html += `<div class="file-item">
-                                <span class="file-icon"></span>${item.name}
-                            </div>`;
+                            <span class="file-icon"></span>${item.name}
+                        </div>`;
                 });
-
+                
                 if (r.items.length === 0) {
                     html = '<div class="file-item">No items found in this directory</div>';
                 }
-
+                
                 browserContent.innerHTML = html;
             }).catch(err => {
                 browserContent.innerHTML = `<span class="status status-error">Error loading directory: ${err}</span>`;
             });
         }
-
+        
         function refreshBrowser() {
             loadFileBrowser(currentBrowserPath);
         }
-
+        
         function selectFolder(path) {
             selectedScanFolder = path;
-
+            
             // Update UI to show selected folder
             document.getElementById('selectedFolderInfo').style.display = 'block';
             document.getElementById('selectedFolderPath').textContent = path;
-
+            
             // Enable scan button
             document.getElementById('scanDirectBtn').disabled = false;
-
+            
             log(`Selected folder: ${path}`);
-
+            
             // Highlight the selected folder
             const items = document.querySelectorAll('.file-item');
             items.forEach(item => {
@@ -534,14 +772,14 @@
                 }
             });
         }
-
+        
         function selectManualPath() {
             const manualPath = document.getElementById('manualPathInput').value;
             if (!manualPath) {
                 alert("Please enter a folder path");
                 return;
             }
-
+            
             // Test if the path exists by trying to browse it
             api('/browse_folder?path=' + encodeURIComponent(manualPath)).then(r => {
                 if (r.error) {
@@ -549,16 +787,16 @@
                     alert(`Invalid path: ${r.error}`);
                     return;
                 }
-
+                
                 selectedScanFolder = manualPath;
-
+                
                 // Update UI to show selected folder
                 document.getElementById('selectedFolderInfo').style.display = 'block';
                 document.getElementById('selectedFolderPath').textContent = manualPath;
-
+                
                 // Enable scan button
                 document.getElementById('scanDirectBtn').disabled = false;
-
+                
                 log(`Selected folder: ${manualPath}`);
             }).catch(err => {
                 log(`Error: ${err}`);
@@ -578,9 +816,9 @@
                     let html = '<table><tr><th>Path</th><th></th></tr>';
                     r.paths.forEach((path, i) => {
                         html += `<tr>
-                                    <td>${path}</td>
-                                    <td><button onclick="selectApk('${path}')">Select</button></td>
-                                </tr>`;
+                                <td>${path}</td>
+                                <td><button onclick="selectApk('${path}')">Select</button></td>
+                            </tr>`;
                     });
                     html += '</table>';
                     apksList.innerHTML = html;
@@ -675,21 +913,25 @@
                         if (data.meta.progress) {
                             updateProgress(data.meta.progress);
                         }
-
+                        
                         if (data.meta.partial_results) {
                             renderResults(data.meta.partial_results);
                             updateLiveResults(data.meta.partial_results);
                         }
-
+                        
                         if (data.meta.current_file) {
                             updateCurrentFile(data.meta.current_file);
                         }
-
+                        
                         if (data.meta.results) {
                             currentResults = data.meta.results;
                             renderResults(currentResults);
                             updateProgress(100);
                             setTimeout(() => showProgress(false), 1000);
+                            
+                            // Switch to results tab
+                            document.querySelector('.tablinks.active').click();
+                            document.querySelector('[onclick="openTab(event, \'ResultsTab\')"]').click();
                         }
                     }
                 });
@@ -716,30 +958,34 @@
                         if (data.meta.progress) {
                             updateProgress(data.meta.progress, true);
                         }
-
+                        
                         if (data.meta.partial_results) {
                             renderResults(data.meta.partial_results);
                             updateLiveResults(data.meta.partial_results);
                         }
-
+                        
                         if (data.meta.current_file) {
                             updateCurrentFile(data.meta.current_file, true);
                         }
-
+                        
                         if (data.meta.results) {
                             currentResults = data.meta.results;
                             renderResults(currentResults);
                             updateProgress(100, true);
                             setTimeout(() => showProgress(false, true), 1000);
+                            
+                            // Switch to results tab
+                            document.querySelector('.tablinks.active').click();
+                            document.querySelector('[onclick="openTab(event, \'ResultsTab\')"]').click();
                         }
                     }
-                }, true);
+                });
             });
         };
 
         document.getElementById('openfolderbtn').onclick = function () {
             if (!lastDecompileDir) {
-                alert("No folder to open");
+                alert("No decompiled directory available");
                 return;
             }
 
@@ -748,182 +994,188 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: lastDecompileDir })
             }).then(r => {
-                if (r.error) {
-                    log(`Error: ${r.error}`);
+                if (r.status === 'opened') {
+                    log(`Opened folder: ${lastDecompileDir}`);
                 } else {
-                    log("Folder opened");
+                    log(`Error opening folder: ${r.error}`);
                 }
             });
         };
 
-        function pollTask(taskId, callback, isDirect = false) {
-            const interval = setInterval(() => {
-                api('/task_status/' + taskId).then(data => {
-                    if (data.logs) {
+        function pollTask(task_id, callback) {
+            const checkTask = () => {
+                api('/task_status/' + task_id).then(data => {
+                    if (data.status === 'finished' || data.status === 'error') {
+                        callback(data);
+                        return;
+                    }
+                    
+                    // Update logs
+                    if (data.logs && data.logs.length) {
                         data.logs.forEach(logEntry => {
-                            if (!logEntry.includes('PICO APK Scanner')) {
+                            if (!logEntry.processed) {
                                 log(logEntry);
+                                logEntry.processed = true;
                             }
                         });
                     }
-
-                    if (data.meta) {
-                        if (data.meta.progress) {
-                            updateProgress(data.meta.progress, isDirect);
-                        }
-
-                        if (data.meta.partial_results) {
-                            renderResults(data.meta.partial_results);
-                            updateLiveResults(data.meta.partial_results);
-                        }
-
-                        if (data.meta.current_file) {
-                            updateCurrentFile(data.meta.current_file, isDirect);
-                        }
-                    }
-
-                    if (['finished', 'error'].includes(data.status)) {
-                        clearInterval(interval);
-                        callback(data);
-                    }
+                    
+                    callback(data);
+                    setTimeout(checkTask, 1000);
                 });
-            }, 1000);
+            };
+            checkTask();
         }
 
         function updateLiveResults(results) {
-            if (!results || results.length === 0) {
-                document.getElementById('liveResults').innerHTML = "No results yet";
-                return;
+            const liveResults = document.getElementById('liveResults');
+            let html = '';
+            
+            if (results && results.length) {
+                html = '<h4>Live Findings:</h4>';
+                
+                results.forEach(sdk => {
+                    const totalFindings = sdk.found_inits.length + sdk.found_privacy_apis.length;
+                    if (totalFindings > 0) {
+                        html += `<div class="sdk-result">
+                            <div class="sdk-header" onclick="toggleSdkDetails('${sdk.sdk}')">
+                                <strong>${sdk.sdk}</strong> 
+                                <span class="finding-count">${totalFindings}</span>
+                            </div>
+                        </div>`;
+                    }
+                });
+            } else {
+                html = 'No findings yet. Scanning in progress...';
             }
-
-            let html = '<h4>Live Scan Results</h4>';
-            let totalFindings = 0;
-            let totalPVPs = 0;
-
-            results.forEach(r => {
-                const findings = r.found_inits.length + r.found_privacy_apis.length;
-                const pvps = r.pvp_triggered.length;
-
-                totalFindings += findings;
-                totalPVPs += pvps;
-
-                html += `
-                    <div class="sdk-result">
-                        <div class="sdk-header">
-                            <strong>${r.sdk}</strong>
-                            <span>${findings} findings, ${pvps} PVPs</span>
-                        </div>
-                    </div>
-                    `;
-            });
-
-            html += `<div class="status">Total: ${totalFindings} findings, ${totalPVPs} PVPs</div>`;
-            document.getElementById('liveResults').innerHTML = html;
+            
+            liveResults.innerHTML = html;
         }
 
-        function toggleSDK(sdk) {
-            expandedSDKs[sdk] = !expandedSDKs[sdk];
+        function toggleSdkDetails(sdkName) {
+            expandedSDKs[sdkName] = !expandedSDKs[sdkName];
             renderResults(currentResults);
         }
 
         function renderResults(results) {
+            const resultsContainer = document.getElementById('results');
+            const resultsCount = document.getElementById('resultsCount');
+            
             if (!results || results.length === 0) {
-                document.getElementById('results').innerHTML = "No results found";
-                document.getElementById('resultsCount').innerText = '';
+                resultsContainer.innerHTML = 'No results yet. Run a scan to see findings.';
+                resultsCount.innerHTML = '';
                 return;
             }
-
-            document.getElementById('resultsCount').innerText = `(${results.length} SDKs analyzed)`;
-
+            
             let html = '';
-            let pvpCount = 0;
-            let findingCount = 0;
-
-            results.forEach(r => {
-                const findings = r.found_inits.length + r.found_privacy_apis.length;
-                const missing = r.missing_privacy_apis.length;
-                const pvps = r.pvp_triggered.length;
-
-                pvpCount += pvps;
-                findingCount += findings;
-
-                const riskLevel = pvps > 0 ? 'high' : (missing > 0 ? 'medium' : 'low');
-
-                html += `
-                    <div class="sdk-result">
-                        <div class="sdk-header" onclick="toggleSDK('${r.sdk}')">
-                            <div>
-                                <strong>${r.sdk}</strong>
-                                <span class="risk-${riskLevel}">(${r.laws})</span>
-                            </div>
-                            <div>
-                                <span class="status">${findings} findings, ${missing} missing, ${pvps} PVPs</span>
-                                <button>${expandedSDKs[r.sdk] ? 'Collapse' : 'Expand'}</button>
-                            </div>
+            let totalFindings = 0;
+            let totalPVPs = 0;
+            
+            results.forEach(sdk => {
+                const sdkFindings = sdk.found_inits.length + sdk.found_privacy_apis.length;
+                totalFindings += sdkFindings;
+                totalPVPs += sdk.pvp_triggered.length;
+                
+                html += `<div class="sdk-result">
+                    <div class="sdk-header" onclick="toggleSdkDetails('${sdk.sdk}')">
+                        <div>
+                            <strong>${sdk.sdk}</strong> - ${sdk.laws}
+                            <span class="finding-count">${sdkFindings}</span>
                         </div>
-                        <div class="sdk-details ${expandedSDKs[r.sdk] ? 'show' : ''}">
-                            <h4>Initialization Patterns Found:</h4>
-                            ${r.found_inits.length > 0 ?
-                        r.found_inits.map(init => `
-                                    <div class="finding">
-                                        <strong>${init.path}</strong> (Line ${init.line})<br>
-                                        <div class="finding-code">${init.code}</div>
-                                    </div>
-                                `).join('') :
-                        '<p>No initialization patterns found</p>'
+                        <div>${sdk.pvp_triggered.length > 0 ? 
+                            `<span class="risk-high">${sdk.pvp_triggered.join(', ')}</span>` : 
+                            '<span class="risk-low">No PVP</span>'}</div>
+                    </div>`;
+                
+                if (expandedSDKs[sdk.sdk]) {
+                    html += `<div class="sdk-details show">`;
+                    
+                    // Show initialization findings
+                    if (sdk.found_inits.length > 0) {
+                        html += `<div class="finding-type">Initialization Patterns Found (${sdk.found_inits.length}):</div>`;
+                        sdk.found_inits.forEach((finding, index) => {
+                            html += `<div class="finding-item">
+                                <span class="law-badge law-init">INIT</span>
+                                <span class="file-path">${finding.path}:${finding.line}</span>
+                                <div class="finding-code">${formatCodeSnippet(finding.code, finding.exact_match)}</div>
+                            </div>`;
+                        });
                     }
-
-                            <h4>Privacy APIs Found:</h4>
-                            ${r.found_privacy_apis.length > 0 ?
-                        r.found_privacy_apis.map(api => `
-                                    <div class="finding">
-                                        <strong>${api.law}:</strong> ${api.api} in ${api.path} (Line ${api.line})<br>
-                                        <div class="finding-code">${api.code}</div>
-                                    </div>
-                                `).join('') :
-                        '<p>No privacy APIs found</p>'
+                    
+                    // Show privacy API findings
+                    if (sdk.found_privacy_apis.length > 0) {
+                        html += `<div class="finding-type">Privacy APIs Found (${sdk.found_privacy_apis.length}):</div>`;
+                        sdk.found_privacy_apis.forEach((finding, index) => {
+                            const lawClass = `law-${finding.law}`;
+                            html += `<div class="finding-item">
+                                <span class="law-badge ${lawClass}">${finding.law.toUpperCase()}</span>
+                                <span class="file-path">${finding.path}:${finding.line}</span>
+                                <div class="finding-code">${formatCodeSnippet(finding.code, finding.exact_match)}</div>
+                            </div>`;
+                        });
                     }
-
-                            <h4>Missing Privacy APIs:</h4>
-                            ${r.missing_privacy_apis.length > 0 ?
-                        `<ul>${r.missing_privacy_apis.map(m => `<li>${m}</li>`).join('')}</ul>` :
-                        '<p>No missing privacy APIs</p>'
+                    
+                    // Show missing APIs
+                    if (sdk.missing_privacy_apis.length > 0) {
+                        html += `<div class="finding-type">Missing Privacy APIs (${sdk.missing_privacy_apis.length}):</div>`;
+                        html += `<div class="finding">${sdk.missing_privacy_apis.join(', ')}</div>`;
                     }
-
-                            <h4>PVP Triggers:</h4>
-                            ${r.pvp_triggered.length > 0 ?
-                        `<ul>${r.pvp_triggered.map(pvp => `<li class="risk-high">${pvp}</li>`).join('')}</ul>` :
-                        '<p>No PVP triggers</p>'
-                    }
-                        </div>
-                    </div>
-                    `;
+                    
+                    html += `</div>`; // Close sdk-details
+                }
+                
+                html += `</div>`; // Close sdk-result
             });
-
-            // Add summary at the top
-            const summaryHtml = `
-                    <div class="sdk-result" style="background-color: #f8f8f8;">
-                        <h3>Scan Summary</h3>
-                        <p>Total SDKs analyzed: ${results.length}</p>
-                        <p>Total findings: ${findingCount}</p>
-                        <p class="${pvpCount > 0 ? 'risk-high' : 'risk-low'}">Total PVP triggers: ${pvpCount}</p>
-                    </div>
-                `;
-
-            document.getElementById('results').innerHTML = summaryHtml + html;
+            
+            resultsCount.innerHTML = `- ${totalFindings} findings, ${totalPVPs} PVPs triggered`;
+            resultsContainer.innerHTML = html;
         }
 
-        // Simple path utilities since we can't import Node.js path module in browser
-        const os = {
-            path: {
-                dirname: function (path) {
-                    return path.replace(/\\/g, '/').replace(/\/[^\/]*$/, '') || '.';
+        function formatCodeSnippet(code, exactMatch) {
+            // Split code into lines and highlight the exact match
+            const lines = code.split('\n');
+            let formattedCode = '';
+            
+            lines.forEach(line => {
+                if (line.includes(exactMatch)) {
+                    formattedCode += `<div class="code-line highlighted-line">${escapeHtml(line)}</div>`;
+                } else {
+                    formattedCode += `<div class="code-line">${escapeHtml(line)}</div>`;
                 }
+            });
+            
+            return formattedCode;
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function exportResults() {
+            if (!currentResults || currentResults.length === 0) {
+                alert("No results to export");
+                return;
             }
-        };
+            
+            const dataStr = JSON.stringify(currentResults, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `picoscan_results_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
 
         // Initialize
         refreshDevices();
+        loadFileBrowser('.');
     </script>
 </body>
 </html>
