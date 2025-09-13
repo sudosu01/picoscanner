@@ -118,7 +118,7 @@ PICO_DB = load_meta_db()
 
 def is_text_file(file_path):
     """Check if a file is likely to be a text file"""
-    text_extensions = {'.smali', '.java', '.xml', '.json', '.txt', '.html', '.js', '.css'}
+    text_extensions = {'.smali', '.java', '.xml', '.json', '.txt', '.html', '.js', '.css', '.kt'}
     return os.path.splitext(file_path)[1].lower() in text_extensions
 
 def read_file_content(file_path):
@@ -132,7 +132,8 @@ def read_file_content(file_path):
     for encoding in encodings:
         try:
             with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
-                return f.read()
+                content = f.read()
+                return content, True
         except UnicodeDecodeError:
             continue
         except Exception as e:
@@ -141,10 +142,11 @@ def read_file_content(file_path):
     # If all encodings fail, try binary read
     try:
         with open(file_path, 'rb') as f:
-            return f.read().decode('utf-8', errors='ignore')
+            content = f.read().decode('utf-8', errors='ignore')
+            return content, False
     except Exception as e:
         print(f"Binary read failed for {file_path}: {e}")
-        return ""
+        return "", False
 
 def analyze_file_content(content, file_path, sdk_conf):
     """Analyze file content for PICO patterns - fixed to handle string content only"""
@@ -160,39 +162,41 @@ def analyze_file_content(content, file_path, sdk_conf):
     # Check initialization patterns
     for init in sdk_conf.get('init', []):
         if isinstance(init, str) and init in content:
-            # Get context around the match
+            # Get exact line numbers and context
             lines = content.split('\n')
-            for i, line in enumerate(lines):
+            for line_num, line in enumerate(lines, 1):
                 if init in line:
-                    start = max(0, i-2)
-                    end = min(len(lines), i+3)
-                    context = '\n'.join(lines[start:end])
+                    start = max(0, line_num-3)
+                    end = min(len(lines), line_num+2)
+                    context = '\n'.join([f"{i}: {line}" for i, line in enumerate(lines[start:end], start+1)])
                     
                     findings['found_inits'].append({
                         'path': file_path,
-                        'line': i+1,
+                        'line': line_num,
                         'code': context,
-                        'pattern': init
+                        'pattern': init,
+                        'exact_match': line.strip()
                     })
     
     # Check privacy APIs
     for law in ("gdpr", "us_p", "coppa"):
         for api in sdk_conf.get(law, []):
             if isinstance(api, str) and api in content:
-                # Get context around the match
+                # Get exact line numbers and context
                 lines = content.split('\n')
-                for i, line in enumerate(lines):
+                for line_num, line in enumerate(lines, 1):
                     if api in line:
-                        start = max(0, i-2)
-                        end = min(len(lines), i+3)
-                        context = '\n'.join(lines[start:end])
+                        start = max(0, line_num-3)
+                        end = min(len(lines), line_num+2)
+                        context = '\n'.join([f"{i}: {line}" for i, line in enumerate(lines[start:end], start+1)])
                         
                         findings['found_privacy_apis'].append({
                             'law': law,
                             'api': api,
                             'path': file_path,
-                            'line': i+1,
-                            'code': context
+                            'line': line_num,
+                            'code': context,
+                            'exact_match': line.strip()
                         })
     
     return findings
@@ -237,7 +241,7 @@ def analyze_decompile(decompile_dir, task_id):
                     
                 try:
                     # Read file content with robust encoding handling
-                    content = read_file_content(file_path)
+                    content, is_proper_text = read_file_content(file_path)
                     
                     if content:
                         # Analyze content for this SDK's patterns
