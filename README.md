@@ -1,6 +1,6 @@
 # PICO APK Privacy Scanner
 
-This project implements a Privacy-Configurable Scanning System (PICO) to analyze Android APKs for privacy compliance issues. It leverages a structured database of SDKs (PICO MetaDB) that maps APIs to legal frameworks (GDPR, CCPA, COPPA, etc.) and checks for Policy Violation Principles (PVPs) in decompiled APKs.
+This project implements a Privacy-Configurable Scanning System (PICO) using python to analyze Android APKs for privacy compliance issues. It leverages a structured database of SDKs (PICO MetaDB) that maps APIs to legal frameworks (GDPR, CCPA, COPPA, etc.) and checks for Policy Violation Principles (PVPs) in decompiled APKs.
 
 # Algorithm
 Step 1: Initialization
