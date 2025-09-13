@@ -74,6 +74,10 @@ Dependencies: pip install flask flask-cors
 - Results panel displays output in structured compliance table and also save output in json in the decompiled folder:
 | SDK | Laws | Metadata | Found APIs | Missing APIs | PVPs Triggered |
 
+# Demo
+
+https://github.com/user-attachments/assets/3175251e-3ec6-42f5-bca5-a917d5fa6fd6
+
 # Screenshots
 
 - Emulator/UI Scanner
