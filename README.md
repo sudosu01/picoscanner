@@ -70,7 +70,7 @@ Dependencies: pip install flask flask-cors
 - View results in the results panel
 
 # Output (Automated Flow)
-- The browser interface shows Logs panel of the puull, decompile and scanned android file
+- The browser interface shows Logs panel of the pul, decompile and scanned android file
 - Results panel displays output in structured compliance table and also save output in json in the decompiled folder:
 | SDK | Laws | Metadata | Found APIs | Missing APIs | PVPs Triggered |
 
