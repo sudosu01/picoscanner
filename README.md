@@ -42,7 +42,7 @@ Step 6: Report Generation
 # Flowchart of Privacy Scanning Process
 <img width="768" height="726" alt="image" src="https://github.com/user-attachments/assets/baf3337d-9f8f-4377-8bbd-79480aef49e9" />
 
-# Automated Flow (Web Server + UI)
+# Automated Flow (Web Server + UI - Static Analysis)
 Instead of decompiling manually and running the scanner yourself, this version provides a web dashboard where everything is automated:
 - Connect to emulator/device via ADB
 - Pull APKs directly from device
