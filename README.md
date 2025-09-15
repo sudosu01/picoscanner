@@ -94,6 +94,10 @@ https://github.com/user-attachments/assets/a0fcb2c6-15d2-408d-a2f0-c94dac7c3731
 CallDorado SDK (7 Findings)
 <img width="1361" height="690" alt="image" src="https://github.com/user-attachments/assets/07bd64b0-b60d-4739-8a04-0beec3ac6a2a" />
 
+- Call app Privacy dialog
+  <img width="380" height="645" alt="image" src="https://github.com/user-attachments/assets/8940b5bb-6747-4502-862a-e4f59dbdf1b4" />
+
+
 Taboola SDK (14 Findings)
 <img width="1366" height="693" alt="image" src="https://github.com/user-attachments/assets/738617c1-5739-4665-aae0-27701ddfe433" />
 
